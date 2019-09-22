@@ -1,5 +1,3 @@
-import { flags } from "../src";
-
 test("Example", async () => {
-  expect(flags.message).toBe("Hello World");
+  expect("Hello World").toBe("Hello World");
 });

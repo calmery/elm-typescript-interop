@@ -2,10 +2,6 @@ import * as fs from "fs";
 import * as path from "path";
 import { findAllDependencies } from "find-elm-dependencies";
 
-export const flags = {
-  message: "Hello World"
-};
-
 // Constants
 
 const currentDirectory = process.cwd();
@@ -51,3 +47,7 @@ const main = async () => {
 };
 
 main();
+
+// Exports for tests
+
+export default {};
