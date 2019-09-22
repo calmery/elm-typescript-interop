@@ -33,8 +33,21 @@ const findMainElm = (sourceDirectories: string[]): string | null => {
 
 // Main
 
-const mainElmPath = findMainElm(elmJson["source-directories"]);
+const main = async () => {
+  const mainElmPath = findMainElm(elmJson["source-directories"]);
 
-if (mainElmPath !== null) {
-  findAllDependencies(mainElmPath).then(console.log);
-}
+  if (mainElmPath === null) {
+    console.error("Main.elm not found");
+    return process.exit(1);
+  }
+
+  const mainElmRelatedPaths = await findAllDependencies(mainElmPath);
+  const elmPaths = [mainElmPath, ...mainElmRelatedPaths];
+  const elmContents = elmPaths.map(elmPath => {
+    return fs.readFileSync(elmPath, "utf-8");
+  });
+
+  console.log(elmContents);
+};
+
+main();
