@@ -1,8 +1,4 @@
-import "./index.scss";
-import { register } from "./serviceWorker";
 import { Elm } from "./Main.elm";
-
-register();
 
 export const flags = {
   message: "Hello World"
@@ -11,6 +7,3 @@ export const flags = {
 Elm.Main.init({
   flags: JSON.stringify(flags)
 });
-
-// eslint-disable-next-line no-console
-console.log(process.env.NODE_ENV);
