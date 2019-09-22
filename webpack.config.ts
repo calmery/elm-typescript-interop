@@ -37,5 +37,6 @@ export default {
   ],
   resolve: {
     extensions: [".ts", ".js"]
-  }
+  },
+  target: "node"
 } as Configuration;
