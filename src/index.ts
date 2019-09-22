@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { findAllDependencies } from "find-elm-dependencies";
+import { Elm } from "./Main.elm";
 
 // Constants
 
@@ -43,7 +44,10 @@ const main = async () => {
     return fs.readFileSync(elmPath, "utf-8");
   });
 
-  console.log(elmContents);
+  const { ports } = Elm.Main.init({ flags: elmJson["elm-version"] });
+
+  ports.parse.send(elmContents);
+  ports.parsed.subscribe(console.log);
 };
 
 main();
