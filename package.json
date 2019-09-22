@@ -4,6 +4,9 @@
       "path": "cz-conventional-changelog"
     }
   },
+  "dependencies": {
+    "find-elm-dependencies": "2.0.2"
+  },
   "devDependencies": {
     "@types/jest": "24.0.18",
     "@types/node": "12.7.2",
