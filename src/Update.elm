@@ -9,6 +9,7 @@ import Elm.Syntax.Module exposing (Module(..))
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node exposing (Node(..))
 import Elm.Syntax.Signature exposing (Signature)
+import Elm.Syntax.TypeAnnotation exposing (TypeAnnotation(..))
 import List.Extra
 import Model exposing (Model)
 import Parser exposing (DeadEnd)
@@ -105,6 +106,16 @@ findMainFunctionSignatureHelper declarations =
             Nothing
 
 
+extractMainSignature : Signature -> Maybe String
+extractMainSignature { typeAnnotation } =
+    case typeAnnotation of
+        Node _ (Typed (Node _ ( [], "Program" )) ((Node _ (Typed (Node _ ( [], flag )) _)) :: _)) ->
+            Just flag
+
+        _ ->
+            Nothing
+
+
 
 -- Port Module
 
@@ -185,4 +196,9 @@ update msg model =
                 portFunctionSignatures =
                     getPortFunctionSignatures parsedContents
             in
-            ( model, parsed [ Debug.toString mainFunctionSignature, Debug.toString portFunctionSignatures ] )
+            ( model
+            , parsed
+                [ Debug.toString <| Maybe.andThen extractMainSignature mainFunctionSignature
+                , Debug.toString portFunctionSignatures
+                ]
+            )
