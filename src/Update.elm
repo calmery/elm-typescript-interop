@@ -14,6 +14,7 @@ import List.Extra
 import Model exposing (Model)
 import Parser exposing (DeadEnd)
 import Port exposing (parsed)
+import String.Interpolate exposing (interpolate)
 
 
 parse : String -> Result (List DeadEnd) File
@@ -172,6 +173,35 @@ findPortFunctionDeclarationsHelper portDeclarations declarations =
 
         [] ->
             portDeclarations
+
+
+
+-- Generate TypeScript Definition
+
+
+type PortFunction
+    = PortFunction String PortDirection String
+
+
+type PortDirection
+    = ElmToTypeScript
+    | TypeScriptToElm
+
+
+elmPortToTypeScriptDefinition : PortFunction -> String
+elmPortToTypeScriptDefinition (PortFunction name portDirection argumentType) =
+    String.join "\n"
+        [ interpolate "{0}: {" [ name ]
+        , "  "
+            ++ (case portDirection of
+                    ElmToTypeScript ->
+                        interpolate "subscribe(callback: (data: {0}) => void): void" [ argumentType ]
+
+                    TypeScriptToElm ->
+                        interpolate "send(data: {0}): void" [ argumentType ]
+               )
+        , "}"
+        ]
 
 
 
