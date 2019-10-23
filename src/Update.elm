@@ -226,16 +226,52 @@ type PortDirection
 
 elmPortToTypeScriptDefinition : PortFunction -> String
 elmPortToTypeScriptDefinition (PortFunction name portDirection argumentType) =
-    String.join "\n"
+    String.join ""
         [ interpolate "{0}: {" [ name ]
-        , "  "
+        , " "
             ++ (case portDirection of
                     ElmToTypeScript ->
-                        interpolate "subscribe(callback: (data: {0}) => void): void" argumentType
+                        interpolate "subscribe(callback: (data: {0}) => void): void" [ String.join " " argumentType ]
 
                     TypeScriptToElm ->
-                        interpolate "send(data: {0}): void" argumentType
+                        interpolate "send(data: {0}): void" [ String.join " " argumentType ]
                )
+        , " }"
+        ]
+
+
+elmToTypeScriptDefinition : Maybe (List String) -> List (Maybe PortFunction) -> String
+elmToTypeScriptDefinition maybeMainFunctionType maybePortFunctions =
+    String.join "\n"
+        [ "export namespace Elm {"
+        , "  namespace Main {"
+        , "    export interface Application {"
+        , "      ports: {"
+        , "        "
+            ++ String.join ",\n        "
+                (List.map
+                    (\maybePortFunction ->
+                        case maybePortFunction of
+                            Just portFunction ->
+                                elmPortToTypeScriptDefinition portFunction
+
+                            Nothing ->
+                                ""
+                    )
+                    maybePortFunctions
+                )
+        , "      }"
+        , "    }"
+        , ""
+        , interpolate "    export function init(options: { flags: {0} }): Elm.Main.Application;"
+            [ case maybeMainFunctionType of
+                Just mainFunctionType ->
+                    String.join " " mainFunctionType
+
+                Nothing ->
+                    "any"
+            ]
+        , "  }"
         , "}"
         ]
 
@@ -263,18 +299,8 @@ update msg model =
                     getPortFunctionSignatures parsedContents
             in
             ( model
-            , parsed
-                [ Debug.toString <| Maybe.andThen extractMainSignature mainFunctionSignature
-                , Debug.toString <|
-                    List.map
-                        (\maybePortFunction ->
-                            case maybePortFunction of
-                                Just portFunction ->
-                                    elmPortToTypeScriptDefinition portFunction
-
-                                Nothing ->
-                                    ""
-                        )
-                        (extractPortFunctionSignatures portFunctionSignatures)
-                ]
+            , parsed <|
+                elmToTypeScriptDefinition
+                    (Maybe.andThen extractMainSignature mainFunctionSignature)
+                    (extractPortFunctionSignatures portFunctionSignatures)
             )
