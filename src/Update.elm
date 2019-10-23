@@ -107,11 +107,24 @@ findMainFunctionSignatureHelper declarations =
             Nothing
 
 
-extractMainSignature : Signature -> Maybe String
+flattenTypes : Node TypeAnnotation -> List String
+flattenTypes flagTypes =
+    case flagTypes of
+        Node _ (Typed (Node _ ( prefixes, flag )) [ nextFlag ]) ->
+            String.join "." (prefixes ++ [ flag ]) :: flattenTypes nextFlag
+
+        Node _ (Typed (Node _ ( prefixes, flag )) []) ->
+            [ String.join "." (prefixes ++ [ flag ]) ]
+
+        _ ->
+            []
+
+
+extractMainSignature : Signature -> Maybe (List String)
 extractMainSignature { typeAnnotation } =
     case typeAnnotation of
-        Node _ (Typed (Node _ ( [], "Program" )) ((Node _ (Typed (Node _ ( [], flag )) _)) :: _)) ->
-            Just flag
+        Node _ (Typed (Node _ ( [], "Program" )) (flagTypes :: _)) ->
+            Just <| flattenTypes flagTypes
 
         _ ->
             Nothing
