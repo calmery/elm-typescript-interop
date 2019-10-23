@@ -188,12 +188,35 @@ findPortFunctionDeclarationsHelper portDeclarations declarations =
             portDeclarations
 
 
+getFunctionNameFromNode : Node String -> String
+getFunctionNameFromNode (Node _ name) =
+    name
+
+
+extractPortFunctionSignature : Signature -> Maybe PortFunction
+extractPortFunctionSignature { name, typeAnnotation } =
+    case typeAnnotation of
+        Node _ (FunctionTypeAnnotation types (Node _ (Typed (Node _ ( _, "Cmd" )) _))) ->
+            Just (PortFunction (getFunctionNameFromNode name) ElmToTypeScript (flattenTypes types))
+
+        Node _ (FunctionTypeAnnotation (Node {} (FunctionTypeAnnotation types _)) (Node _ (Typed (Node _ ( _, "Sub" )) _))) ->
+            Just (PortFunction (getFunctionNameFromNode name) TypeScriptToElm (flattenTypes types))
+
+        _ ->
+            Nothing
+
+
+extractPortFunctionSignatures : List Signature -> List (Maybe PortFunction)
+extractPortFunctionSignatures xs =
+    List.map (\signature -> extractPortFunctionSignature signature) xs
+
+
 
 -- Generate TypeScript Definition
 
 
 type PortFunction
-    = PortFunction String PortDirection String
+    = PortFunction String PortDirection (List String)
 
 
 type PortDirection
@@ -208,10 +231,10 @@ elmPortToTypeScriptDefinition (PortFunction name portDirection argumentType) =
         , "  "
             ++ (case portDirection of
                     ElmToTypeScript ->
-                        interpolate "subscribe(callback: (data: {0}) => void): void" [ argumentType ]
+                        interpolate "subscribe(callback: (data: {0}) => void): void" argumentType
 
                     TypeScriptToElm ->
-                        interpolate "send(data: {0}): void" [ argumentType ]
+                        interpolate "send(data: {0}): void" argumentType
                )
         , "}"
         ]
@@ -242,6 +265,16 @@ update msg model =
             ( model
             , parsed
                 [ Debug.toString <| Maybe.andThen extractMainSignature mainFunctionSignature
-                , Debug.toString portFunctionSignatures
+                , Debug.toString <|
+                    List.map
+                        (\maybePortFunction ->
+                            case maybePortFunction of
+                                Just portFunction ->
+                                    elmPortToTypeScriptDefinition portFunction
+
+                                Nothing ->
+                                    ""
+                        )
+                        (extractPortFunctionSignatures portFunctionSignatures)
                 ]
             )
