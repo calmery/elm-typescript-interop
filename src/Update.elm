@@ -213,6 +213,46 @@ extractPortFunctionSignatures xs =
 
 
 -- Generate TypeScript Definition
+{-
+   tuples
+   records
+-}
+
+
+elmDefinitionToTypeScriptDefinition : List String -> String
+elmDefinitionToTypeScriptDefinition types =
+    case types of
+        currentType :: nextTypes ->
+            case currentType of
+                "Bool" ->
+                    "bool"
+
+                "Int" ->
+                    "number"
+
+                "Float" ->
+                    "number"
+
+                "String" ->
+                    "string"
+
+                "List" ->
+                    elmDefinitionToTypeScriptDefinition nextTypes ++ "[]"
+
+                "Array" ->
+                    elmDefinitionToTypeScriptDefinition nextTypes ++ "[]"
+
+                "Maybe" ->
+                    elmDefinitionToTypeScriptDefinition nextTypes ++ " | null"
+
+                "Json.Decode.Value" ->
+                    "string"
+
+                _ ->
+                    "any"
+
+        _ ->
+            "any"
 
 
 type PortFunction
@@ -231,10 +271,10 @@ elmPortToTypeScriptDefinition (PortFunction name portDirection argumentType) =
         , " "
             ++ (case portDirection of
                     ElmToTypeScript ->
-                        interpolate "subscribe(callback: (data: {0}) => void): void" [ String.join " " argumentType ]
+                        interpolate "subscribe(callback: (data: {0}) => void): void" [ elmDefinitionToTypeScriptDefinition argumentType ]
 
                     TypeScriptToElm ->
-                        interpolate "send(data: {0}): void" [ String.join " " argumentType ]
+                        interpolate "send(data: {0}): void" [ elmDefinitionToTypeScriptDefinition argumentType ]
                )
         , " }"
         ]
@@ -266,7 +306,7 @@ elmToTypeScriptDefinition maybeMainFunctionType maybePortFunctions =
         , interpolate "    export function init(options: { flags: {0} }): Elm.Main.Application;"
             [ case maybeMainFunctionType of
                 Just mainFunctionType ->
-                    String.join " " mainFunctionType
+                    elmDefinitionToTypeScriptDefinition mainFunctionType
 
                 Nothing ->
                     "any"
